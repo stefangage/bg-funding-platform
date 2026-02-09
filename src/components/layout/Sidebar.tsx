@@ -16,7 +16,9 @@ import {
     X,
     Bell,
     Search,
-    ExternalLink
+    ExternalLink,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 interface Company {
@@ -29,6 +31,8 @@ interface SidebarProps {
     companies: Company[];
     selectedCompanyId: string | null;
     onSelectCompany: (id: string) => void;
+    isCollapsed?: boolean;
+    onToggleCollapse?: () => void;
 }
 
 const navItems = [
@@ -39,7 +43,7 @@ const navItems = [
     { href: '/settings', icon: Settings, label: 'Settings', labelBg: 'Настройки' },
 ];
 
-export function Sidebar({ companies, selectedCompanyId, onSelectCompany }: SidebarProps) {
+export function Sidebar({ companies, selectedCompanyId, onSelectCompany, isCollapsed = false, onToggleCollapse }: SidebarProps) {
     const pathname = usePathname();
     const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -57,10 +61,9 @@ export function Sidebar({ companies, selectedCompanyId, onSelectCompany }: Sideb
                     {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
                 </button>
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+                    <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                         <span className="text-white font-bold text-sm">BG</span>
                     </div>
-                    <span className="font-semibold text-gray-900">Funding Platform</span>
                 </div>
                 <button className="p-2 rounded-lg hover:bg-gray-100 relative">
                     <Bell size={24} />
@@ -79,50 +82,68 @@ export function Sidebar({ companies, selectedCompanyId, onSelectCompany }: Sideb
             {/* Sidebar */}
             <aside
                 className={`
-          fixed top-0 left-0 h-full w-72 bg-white border-r border-gray-200 z-50
-          transform transition-transform duration-300 ease-in-out
+          fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-40
+          transform transition-all duration-300 ease-in-out
           lg:translate-x-0
-          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'}
+          ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+          ${isCollapsed ? 'w-20' : 'w-72'}
         `}
             >
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full relative">
+                    {/* Toggle Button (Desktop Only) */}
+                    {onToggleCollapse && (
+                        <button
+                            onClick={onToggleCollapse}
+                            className="hidden lg:flex absolute -right-3 top-20 w-6 h-6 bg-white border border-gray-200 rounded-full items-center justify-center text-gray-500 hover:text-orange-600 hover:border-orange-200 shadow-sm z-[60] transition-colors"
+                        >
+                            {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+                        </button>
+                    )}
+
                     {/* Logo */}
-                    <div className="h-16 flex items-center gap-3 px-6 border-b border-gray-200">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <div className={`h-16 flex items-center gap-3 border-b border-gray-200 ${isCollapsed ? 'justify-center px-0' : 'px-6'}`}>
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex-shrink-0 flex items-center justify-center shadow-lg shadow-orange-500/20">
                             <span className="text-white font-bold">BG</span>
                         </div>
-                        <div>
-                            <h1 className="font-bold text-gray-900">BG Funding</h1>
-                            <p className="text-xs text-gray-500">Платформа за финансиране</p>
-                        </div>
+                        {!isCollapsed && (
+                            <div className="animate-fade-in whitespace-nowrap overflow-hidden">
+                                <h1 className="font-bold text-gray-900">BG Funding</h1>
+                                <p className="text-xs text-gray-500">Платформа за финансиране</p>
+                            </div>
+                        )}
                     </div>
 
                     {/* Company Selector */}
-                    <div className="p-4 border-b border-gray-200">
+                    <div className={`p-4 border-b border-gray-200 ${isCollapsed ? 'px-2' : ''}`}>
                         <button
-                            onClick={() => setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
-                            className="w-full flex items-center justify-between p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors"
+                            onClick={() => !isCollapsed && setIsCompanyDropdownOpen(!isCompanyDropdownOpen)}
+                            className={`w-full flex items-center justify-between transition-colors rounded-xl ${isCollapsed ? 'p-2 justify-center bg-transparent' : 'p-3 bg-gray-50 hover:bg-gray-100'}`}
+                            title={isCollapsed ? selectedCompany?.name : undefined}
                         >
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                                    <Building2 size={20} className="text-blue-600" />
+                                <div className={`w-10 h-10 bg-cyan-100 rounded-lg flex-shrink-0 flex items-center justify-center ${isCollapsed ? 'ring-2 ring-cyan-500 ring-offset-2' : ''}`}>
+                                    <Building2 size={20} className="text-cyan-600" />
                                 </div>
-                                <div className="text-left">
-                                    <p className="font-medium text-gray-900 text-sm truncate max-w-[140px]">
-                                        {selectedCompany?.name || 'Select Company'}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                        {companies.length} {companies.length === 1 ? 'company' : 'companies'}
-                                    </p>
-                                </div>
+                                {!isCollapsed && (
+                                    <div className="text-left animate-fade-in whitespace-nowrap overflow-hidden">
+                                        <p className="font-medium text-gray-900 text-sm truncate max-w-[140px]">
+                                            {selectedCompany?.name || 'Select Company'}
+                                        </p>
+                                        <p className="text-xs text-gray-500">
+                                            {companies.length} {companies.length === 1 ? 'company' : 'companies'}
+                                        </p>
+                                    </div>
+                                )}
                             </div>
-                            <ChevronDown
-                                size={20}
-                                className={`text-gray-400 transition-transform ${isCompanyDropdownOpen ? 'rotate-180' : ''}`}
-                            />
+                            {!isCollapsed && (
+                                <ChevronDown
+                                    size={20}
+                                    className={`text-gray-400 transition-transform ${isCompanyDropdownOpen ? 'rotate-180' : ''}`}
+                                />
+                            )}
                         </button>
 
-                        {isCompanyDropdownOpen && (
+                        {!isCollapsed && isCompanyDropdownOpen && (
                             <div className="mt-2 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden animate-fade-in">
                                 {companies.map(company => (
                                     <button
@@ -133,25 +154,25 @@ export function Sidebar({ companies, selectedCompanyId, onSelectCompany }: Sideb
                                         }}
                                         className={`
                       w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors
-                      ${company.id === selectedCompanyId ? 'bg-blue-50' : ''}
+                      ${company.id === selectedCompanyId ? 'bg-orange-50' : ''}
                     `}
                                     >
                                         <div className={`
-                      w-8 h-8 rounded-lg flex items-center justify-center
-                      ${company.id === selectedCompanyId ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}
+                       w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center
+                      ${company.id === selectedCompanyId ? 'bg-orange-500 text-white' : 'bg-gray-100 text-gray-600'}
                     `}>
                                             <Building2 size={16} />
                                         </div>
-                                        <span className={`text-sm ${company.id === selectedCompanyId ? 'font-medium text-blue-600' : 'text-gray-700'}`}>
+                                        <span className={`text-sm truncate ${company.id === selectedCompanyId ? 'font-medium text-orange-600' : 'text-gray-700'}`}>
                                             {company.name}
                                         </span>
                                     </button>
                                 ))}
                                 <Link
                                     href="/companies/new"
-                                    className="flex items-center gap-3 p-3 border-t border-gray-100 hover:bg-gray-50 transition-colors text-blue-600"
+                                    className="flex items-center gap-3 p-3 border-t border-gray-100 hover:bg-gray-50 transition-colors text-orange-600"
                                 >
-                                    <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                                    <div className="w-8 h-8 rounded-lg bg-orange-100 flex-shrink-0 flex items-center justify-center">
                                         <Plus size={16} />
                                     </div>
                                     <span className="text-sm font-medium">Add Company</span>
@@ -161,69 +182,77 @@ export function Sidebar({ companies, selectedCompanyId, onSelectCompany }: Sideb
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 p-4 space-y-1">
+                    <nav className={`flex-1 p-4 space-y-1 ${isCollapsed ? 'px-2' : ''}`}>
                         {navItems.map(item => {
                             const isActive = pathname.startsWith(item.href);
                             return (
                                 <Link
                                     key={item.href}
                                     href={item.href}
+                                    title={isCollapsed ? item.label : undefined}
                                     onClick={() => setIsMobileMenuOpen(false)}
                                     className={`
-                    flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                    flex items-center rounded-xl transition-all
+                    ${isCollapsed ? 'justify-center p-3' : 'px-4 py-3 gap-3'}
                     ${isActive
-                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                            ? 'bg-orange-500 text-white shadow-lg shadow-orange-500/20'
                                             : 'text-gray-600 hover:bg-gray-100'
                                         }
                   `}
                                 >
-                                    <item.icon size={20} />
-                                    <span className="font-medium">{item.label}</span>
+                                    <item.icon size={20} className="flex-shrink-0" />
+                                    {!isCollapsed && <span className="font-medium animate-fade-in">{item.label}</span>}
                                 </Link>
                             );
                         })}
                     </nav>
 
                     {/* Official Sources */}
-                    <div className="p-4 border-t border-gray-200">
-                        <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
-                            Official Sources
-                        </p>
-                        <div className="space-y-2">
-                            <a
-                                href="https://eumis2020.government.bg"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
-                            >
-                                <ExternalLink size={14} />
-                                ИСУН 2020
-                            </a>
-                            <a
-                                href="https://eufunds.bg"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex items-center gap-2 text-sm text-gray-600 hover:text-blue-600 transition-colors"
-                            >
-                                <ExternalLink size={14} />
-                                euFunds.bg
-                            </a>
+                    {!isCollapsed && (
+                        <div className="p-4 border-t border-gray-200 animate-fade-in">
+                            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-3">
+                                Official Sources
+                            </p>
+                            <div className="space-y-2">
+                                <a
+                                    href="https://eumis2020.government.bg"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-cyan-600 transition-colors"
+                                >
+                                    <ExternalLink size={14} />
+                                    ИСУН 2020
+                                </a>
+                                <a
+                                    href="https://eufunds.bg"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center gap-2 text-sm text-gray-600 hover:text-cyan-600 transition-colors"
+                                >
+                                    <ExternalLink size={14} />
+                                    euFunds.bg
+                                </a>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* User */}
-                    <div className="p-4 border-t border-gray-200">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-medium">
+                    <div className={`p-4 border-t border-gray-200 ${isCollapsed ? 'px-2' : ''}`}>
+                        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex-shrink-0 flex items-center justify-center text-white font-medium shadow-sm">
                                 U
                             </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium text-gray-900 text-sm truncate">User</p>
-                                <p className="text-xs text-gray-500 truncate">user@example.com</p>
-                            </div>
-                            <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                                <LogOut size={18} />
-                            </button>
+                            {!isCollapsed && (
+                                <>
+                                    <div className="flex-1 min-w-0 animate-fade-in">
+                                        <p className="font-medium text-gray-900 text-sm truncate">User</p>
+                                        <p className="text-xs text-gray-500 truncate">user@example.com</p>
+                                    </div>
+                                    <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
+                                        <LogOut size={18} />
+                                    </button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -248,7 +277,7 @@ export function SearchBar() {
 export function TopBar() {
     return (
         <div className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-gray-200 bg-white">
-            <div className="flex-1 max-w-xl">
+            <div className="flex-1 max-w-md ml-4">
                 <SearchBar />
             </div>
             <div className="flex items-center gap-4">

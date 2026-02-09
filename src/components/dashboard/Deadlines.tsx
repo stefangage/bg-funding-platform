@@ -65,7 +65,7 @@ export function UpcomingDeadlines({ deadlines }: UpcomingDeadlinesProps) {
 
     return (
         <div className="card">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100">
                 <h3 className="font-semibold text-gray-900">Upcoming Deadlines</h3>
                 <span className="badge badge-info">{deadlines.length} total</span>
             </div>
@@ -143,11 +143,11 @@ export function DeadlineCalendar({ deadlines }: UpcomingDeadlinesProps) {
 
     return (
         <div className="card">
-            <h3 className="font-semibold text-gray-900 mb-4">
+            <h3 className="font-semibold text-gray-900 mb-5 pb-3 border-b border-gray-100">
                 {format(today, 'MMMM yyyy')}
             </h3>
 
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-1.5">
                 {/* Week day headers */}
                 {weekDays.map(day => (
                     <div key={day} className="text-center text-xs font-medium text-gray-400 py-2">

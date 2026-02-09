@@ -16,6 +16,7 @@ interface DashboardLayoutProps {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
     const [selectedCompanyId, setSelectedCompanyId] = useState<string>(DEMO_COMPANIES[0].id);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -23,15 +24,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 companies={DEMO_COMPANIES}
                 selectedCompanyId={selectedCompanyId}
                 onSelectCompany={setSelectedCompanyId}
+                isCollapsed={isSidebarCollapsed}
+                onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             />
 
-            {/* Main Content */}
-            <div className="lg:pl-72">
+            {/* Main Content - uses custom CSS for sidebar offset */}
+            <div
+                className={`dashboard-main min-h-screen flex flex-col ${isSidebarCollapsed ? 'sidebar-collapsed' : ''}`}
+            >
                 <TopBar />
 
                 {/* Page Content */}
-                <main className="pt-16 lg:pt-0">
-                    <div className="p-6 lg:p-8">
+                <main className="pt-16 lg:pt-0 flex-1">
+                    <div className="p-6 sm:p-8 lg:p-10 xl:p-12 max-w-[1600px] mx-auto">
                         {children}
                     </div>
                 </main>
@@ -39,3 +44,4 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </div>
     );
 }
+
