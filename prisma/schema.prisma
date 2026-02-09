@@ -1,0 +1,249 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============== ENUMS (stored as strings in SQLite) ==============
+
+// Legal forms: EOOD (ЕООД), OOD (ООД), AD, ET, etc.
+// Size classes: MICRO, SMALL, MEDIUM, LARGE
+// Statuses: DRAFT, IN_PROGRESS, SUBMITTED, APPROVED, REJECTED
+
+// ============== CORE MODELS ==============
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  passwordHash  String
+  companies     Company[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model Company {
+  id                  String   @id @default(cuid())
+  userId              String
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Basic info
+  name                String
+  nameBg              String?  // Bulgarian name
+  eik                 String   @unique  // Bulgarian company registration number
+  legalForm           String   // EOOD, OOD, AD, ET
+  registrationDate    DateTime?
+  address             String?
+  city                String?
+  
+  // Size classification
+  employees           Int      @default(0)
+  annualRevenue       Float    @default(0)  // in BGN
+  balanceSheetTotal   Float    @default(0)  // in BGN
+  sizeClass           String   @default("MICRO")  // MICRO, SMALL, MEDIUM, LARGE
+  
+  // Activities - stored as JSON string
+  industries          String   @default("[]")  // JSON array of industry codes (КИД)
+  activities          String   @default("[]")  // JSON array of activity types
+  
+  // Innovation profile
+  hasPatents          Boolean  @default(false)
+  rdSpending          Float?   // R&D spending last year in BGN
+  hasUniversityCollab Boolean  @default(false)
+  previousEuProjects  Int      @default(0)
+  
+  // Status
+  isComplete          Boolean  @default(false)
+  
+  // Relations
+  documents           Document[]
+  applications        Application[]
+  
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model Document {
+  id              String   @id @default(cuid())
+  companyId       String
+  company         Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  name            String
+  nameBg          String?
+  type            String   // CURRENT_STATUS, FINANCIAL_STATEMENT, TAX_CERTIFICATE, etc.
+  fileName        String
+  filePath        String
+  fileSize        Int
+  mimeType        String
+  
+  // Validity
+  issuedDate      DateTime?
+  expiryDate      DateTime?
+  isValid         Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model FundingProgram {
+  id                    String   @id @default(cuid())
+  
+  // Basic info
+  name                  String
+  nameBg                String
+  description           String
+  descriptionBg         String
+  
+  // Program hierarchy
+  operationalProgram    String   // e.g., "Education 2021-2027", "Competitiveness"
+  procedure             String   // Specific call/procedure name
+  
+  // Funding details
+  minAmount             Float    // in EUR
+  maxAmount             Float    // in EUR
+  coFinancingRate       Int      // Percentage (0-100)
+  currency              String   @default("EUR")
+  totalBudget           Float?   // Total available in this call
+  
+  // Timeline
+  openDate              DateTime
+  closeDate             DateTime
+  projectDurationMin    Int      @default(6)   // months
+  projectDurationMax    Int      @default(24)  // months
+  
+  // Eligibility criteria - stored as JSON
+  eligibleLegalForms    String   @default("[]")  // JSON array
+  eligibleSizeClasses   String   @default("[]")  // JSON array
+  eligibleIndustries    String   @default("[]")  // JSON array of КИД codes
+  eligibleActivities    String   @default("[]")  // JSON array
+  eligibleRegions       String   @default("[]")  // JSON array
+  
+  // Eligible activities for funding
+  fundableActivities    String   @default("[]")  // JSON array of what can be funded
+  
+  // Required documents
+  requiredDocuments     String   @default("[]")  // JSON array
+  
+  // Official sources - CRITICAL for verification
+  isunUrl               String?  // ИСУН 2020 direct link
+  euFundsUrl            String?  // eufunds.bg link  
+  guidelinesUrl         String?  // PDF guidelines link
+  managingAuthority     String?  // Which authority manages this
+  
+  // Status
+  status                String   @default("OPEN")  // UPCOMING, OPEN, CLOSED, CANCELLED
+  lastVerified          DateTime @default(now())
+  
+  // Relations
+  applications          Application[]
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Application {
+  id                    String   @id @default(cuid())
+  
+  companyId             String
+  company               Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  
+  fundingProgramId      String
+  fundingProgram        FundingProgram @relation(fields: [fundingProgramId], references: [id])
+  
+  // Project details
+  projectTitle          String
+  projectTitleBg        String
+  projectDescription    String?
+  projectDescriptionBg  String?
+  
+  // Eligibility
+  matchScore            Int      @default(0)  // 0-100 percentage match
+  eligibilityNotes      String?  // JSON of eligibility check results
+  
+  // Financials
+  requestedAmount       Float    @default(0)
+  coFinancingAmount     Float    @default(0)
+  
+  // Status
+  status                String   @default("DRAFT")  // DRAFT, IN_PROGRESS, READY, SUBMITTED, APPROVED, REJECTED
+  
+  // Submission
+  isunReferenceNumber   String?
+  submittedAt           DateTime?
+  submissionNotes       String?
+  
+  // Relations
+  tasks                 Task[]
+  applicationDocuments  ApplicationDocument[]
+  
+  startedAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model Task {
+  id                String   @id @default(cuid())
+  
+  applicationId     String
+  application       Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  // Task details
+  title             String
+  titleBg           String
+  description       String
+  descriptionBg     String
+  
+  category          String   // PREPARATION, DOCUMENT, PROPOSAL, BUDGET, REVIEW, SUBMISSION
+  orderIndex        Int      @default(0)
+  week              Int      @default(1)  // Which week in the timeline
+  
+  // Due date
+  dueDate           DateTime
+  
+  // Help information
+  whereToGet        String?  // Where to obtain this
+  howToGet          String?  // Instructions
+  processingTime    String?  // e.g., "7 business days"
+  officialUrl       String?  // Link to official portal
+  
+  // Status
+  status            String   @default("PENDING")  // PENDING, IN_PROGRESS, COMPLETED, SKIPPED
+  completedAt       DateTime?
+  notes             String?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model ApplicationDocument {
+  id              String   @id @default(cuid())
+  
+  applicationId   String
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  
+  name            String
+  nameBg          String?
+  type            String   // APPLICATION_FORM, PROPOSAL, BUDGET, DECLARATION, etc.
+  
+  // File info (null if generated/template)
+  fileName        String?
+  filePath        String?
+  fileSize        Int?
+  mimeType        String?
+  
+  // Generation
+  isGenerated     Boolean  @default(false)
+  templateId      String?
+  generatedAt     DateTime?
+  
+  // Status
+  status          String   @default("PENDING")  // PENDING, IN_PROGRESS, READY, SIGNED
+  signedAt        DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
